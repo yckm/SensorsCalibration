@@ -8,34 +8,34 @@
 
 #include <fstream>
 #include <iostream>
-#include <json/json.h>
+#include "../../json.hpp"
 #include <stdio.h>
 #include <string>
 
+using json = nlohmann::json;
+
 void LoadExtrinsic(const std::string &filename, Eigen::Matrix4d &extrinsic) {
-  Json::Reader reader;
-  Json::Value root;
 
   std::ifstream in(filename, std::ios::binary);
-  // std::ifstream in;
-  // in.open(filename);
   if (!in.is_open()) {
     std::cout << "Error Opening " << filename << std::endl;
     return;
   }
+    json root;
+    try {
+        in >> root;
+    } catch (json::exception &e) {
+        std::cout << e.what()<< std::endl;
+        in.close();
+        return ;
+    }
+    in.close();
 
-  if (reader.parse(in, root, false)) {
-    auto name = root.getMemberNames();
-    std::string id = *(name.begin());
-    std::cout << id << std::endl;
-    Json::Value data = root[id]["param"]["sensor_calib"]["data"];
-    extrinsic << data[0][0].asDouble(), data[0][1].asDouble(),
-        data[0][2].asDouble(), data[0][3].asDouble(), data[1][0].asDouble(),
-        data[1][1].asDouble(), data[1][2].asDouble(), data[1][3].asDouble(),
-        data[2][0].asDouble(), data[2][1].asDouble(), data[2][2].asDouble(),
-        data[2][3].asDouble(), data[3][0].asDouble(), data[3][1].asDouble(),
-        data[3][2].asDouble(), data[3][3].asDouble();
-  }
-  in.close();
-  return;
+    auto data = root["top_center_lidar-to-center_camera-extrinsic"]["param"]["sensor_calib"]["data"];
+    extrinsic << data[0][0], data[0][1],
+        data[0][2], data[0][3], data[1][0],
+        data[1][1], data[1][2], data[1][3],
+        data[2][0], data[2][1], data[2][2],
+        data[2][3], data[3][0], data[3][1],
+        data[3][2], data[3][3];
 }
